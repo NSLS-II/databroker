@@ -77,7 +77,8 @@ def _try_descr(field_metadata):
     if descr:
         if len(descr) == 1 and descr[0][0] == "":
             return None
-        dtype = StructDtype.from_numpy_dtype(numpy.dtype(descr))
+        numpy_dtype = numpy.dtype([tuple(field) for field in descr])
+        dtype = StructDtype.from_numpy_dtype(numpy_dtype)
         if dtype.max_depth() > 1:
             raise RuntimeError(
                 "We can not yet cope with multiple nested structured dtypes.  "
