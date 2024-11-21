@@ -1728,15 +1728,33 @@ class BrokerES(object):
             db.mds.insert_run_stop(**_sanitize(header['stop']))
             # insert assets
             res_uids = self.get_resource_uids(header)
+
             for uid in res_uids:
                 fps = self.reg.copy_files(uid, new_root=new_root,
                                           **copy_kwargs)
                 file_pairs.extend(fps)
                 res = self.reg.resource_given_uid(uid)
+                r_path = res['resource_path']
+                out_root = new_root
+                if os.path.isabs(r_path):
+                    if not res['root']:
+                        r_path = os.path.relpath(r_path, os.path.sep)
+                        if new_root is None:
+                            out_root = os.path.sep
+                    else:
+                        raise RuntimeError("Resource has non-trivial root "
+                                           "and an absolute resource path.  "
+                                           "This is inconsistent, aborting")
+                else:
+                    if new_root is None:
+                        out_root = res['root']
+                    else:
+                        out_root = new_root
+
                 new_res = db.reg.insert_resource(res['spec'],
-                                                 res['resource_path'],
+                                                 r_path,
                                                  res['resource_kwargs'],
-                                                 root=new_root)
+                                                 root=out_root)
                 # Note that new_res has a different resource id than res.
                 datums = self.reg.datum_gen_given_resource(uid)
                 for datum in datums:
