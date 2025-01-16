@@ -32,7 +32,7 @@ especially large) there.
 
 .. code:: python
 
-   from databroker import temp
+   from databroker.v2 import temp
    catalog = temp()
    # That's it!
 
