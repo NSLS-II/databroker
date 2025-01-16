@@ -10,13 +10,18 @@ libraries `dask`_, `intake`_, and `xarray`_, which emerged or reached maturity
 some time after 2015. Databroker 1.x provides three public interfaces on top of
 these two implementations.
 
-=========== ========= ============== ==================================================
-API version Interface Implementation Who should use it?
-=========== ========= ============== ==================================================
-v2          New       New            All new users
-v1          Original  New            Users with old scripts that use original interface
-v0          Original  Original       Users who hit bugs in v1/v2 and need a fallback
-=========== ========= ============== ==================================================
+Databorker 2.x contains a new remote-friendly interface using Tiled. This allows 
+Databroker clients to commincate over HTTP by default. The API interface is very
+similar to API v2, with subtle differences mostly in initializing the client.
+
+=========== ========= ============== =========================== ==================================================
+API version Interface Implementation Support Databroker Versions Who should use it?
+=========== ========= ============== =========================== ==================================================
+v2 + tiled  New+      Tiled          2.x                         All new users
+v2          New       New            2.x, 1.x                    Users with scripts that use the original v2
+v1          Original  New            2.x, 1.x                    Users with old scripts that use original interface
+v0          Original  Original       2.x, 1.x                    Users who hit bugs in v1/v2 and need a fallback
+=========== ========= ============== =========================== ==================================================
 
 Which interface should I use?
 -----------------------------
@@ -49,6 +54,12 @@ binary formats, such as `TileDB`_.
 
 How do I use them?
 ------------------
+
+.. code:: python
+
+   # v2 + tiled, recommended for new users
+   # not sure what goes here?
+
 
 All of the tutorials now use ``databroker.v2``. As they show, this gets you a
 v2-style catalog.
