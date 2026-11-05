@@ -1,6 +1,6 @@
 from bluesky import RunEngine
 from bluesky.plans import count
-from ophyd.sim import img, DirectImage
+from ophyd.sim import det, img, DirectImage
 from tiled.client import Context, from_context
 from tiled.server.app import build_app
 
@@ -142,3 +142,38 @@ def test_custom_validate_shape(tmpdir):
         assert not shapes
         client[uid]["primary"]["data"]["img"][:]
         assert shapes
+
+
+def test_batched_read_keeps_each_key_shape():
+    # container_full calls DatasetFromDocuments.read with every field.
+    # An image and a scalar in that batch must keep their own event shapes.
+    # DatasetClient.read fetches one array at a time and does not hit this path.
+    adapter = MongoAdapter.from_mongomock()
+    wide = DirectImage(
+        func=lambda: np.arange(12).reshape(3, 4), name="wide", labels={"detectors"}
+    )
+    wide.img.name = "wide_img"
+    narrow = DirectImage(
+        func=lambda: np.arange(2), name="narrow", labels={"detectors"}
+    )
+    narrow.img.name = "narrow_img"
+
+    with Context.from_app(build_app(adapter)) as context:
+        client = from_context(context)
+
+        def post_document(name, doc):
+            client.post_document(name, doc)
+
+        RE = RunEngine()
+        RE.subscribe(post_document)
+        (uid,) = RE(count([wide, narrow, det], num=5))
+        dataset = adapter[uid]["primary"]["data"]
+        loaded = dataset.read()
+        wide_img = np.asarray(loaded["wide_img"].read())
+        narrow_img = np.asarray(loaded["narrow_img"].read())
+        scalar = np.asarray(loaded["det"].read())
+    assert wide_img.shape == (5, 3, 4)
+    assert narrow_img.shape == (5, 2)
+    assert scalar.shape == (5,)
+    assert np.array_equal(wide_img[0], np.arange(12).reshape(3, 4))
+    assert np.array_equal(narrow_img[0], np.arange(2))
