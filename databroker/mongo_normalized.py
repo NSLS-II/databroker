@@ -917,6 +917,10 @@ class DatasetFromDocuments:
         data_keys = [descriptors[0]["data_keys"][key] for key in keys]
         is_externals = ["external" in data_key for data_key in data_keys]
         expected_shapes = [tuple(data_key["shape"] or []) for data_key in data_keys]
+        # A later call may pass only the scalar keys, or one nonscalar key.
+        # Those subsets are not aligned with this list, so look shapes up by name.
+        expected_shape_for_key = dict(zip(keys, expected_shapes))
+        external_for_key = dict(zip(keys, is_externals))
 
         def populate_columns(keys, min_seq_num, max_seq_num):
             # This closes over the local variable columns and appends to its
@@ -964,7 +968,9 @@ class DatasetFromDocuments:
                 ]
             )
             (result,) = cursor
-            for key, expected_shape, is_external in zip(keys, expected_shapes, is_externals):
+            for key in keys:
+                expected_shape = expected_shape_for_key[key]
+                is_external = external_for_key[key]
                 if expected_shape and (not is_external):
                     validated_column = list(
                         map(
